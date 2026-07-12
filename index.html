@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>シューティングゲーム自動生成プロンプトメーカー</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#0f172a;color:#fff;max-width:900px;margin:auto;padding:20px}
+section{background:#1e293b;padding:16px;border-radius:10px;margin:16px 0}
+h1,h2{margin:0 0 10px}
+label{display:block;margin:6px 0}
+textarea{width:100%;height:80px}
+button{padding:12px 18px;font-size:16px;margin-top:10px;cursor:pointer}
+#out{white-space:pre-wrap;background:#020617;padding:16px;border-radius:8px}
+</style>
+</head>
+<body>
+<h1>🎮 シューティングゲーム自動生成プロンプトメーカー</h1>
+
+<section>
+<h2>① コンセプト</h2>
+<textarea id="concept" placeholder="どんなゲーム？"></textarea>
+</section>
+
+<section>
+<h2>② 参照するゲーム（任意）</h2>
+<textarea id="referenceGame" placeholder="例：グラディウス、ツインビー、東方Projectなど"></textarea>
+<p>入力したゲームの雰囲気・操作感・画面構成を参考にした出力イメージを指定できます。</p>
+</section>
+
+<section>
+<h2>③ 世界観</h2>
+<label><input type="radio" name="world" value="宇宙" checked>宇宙</label>
+<label><input type="radio" name="world" value="魔法">魔法</label>
+<label><input type="radio" name="world" value="サイバー">サイバー</label>
+<label><input type="radio" name="world" value="ホラー">ホラー</label>
+</section>
+
+<section>
+<h2>④ 武器</h2>
+<label><input type="checkbox" value="通常ショット" class="weapon">通常ショット</label>
+<label><input type="checkbox" value="レーザー" class="weapon">レーザー</label>
+<label><input type="checkbox" value="ホーミング" class="weapon">ホーミング</label>
+<label><input type="checkbox" value="ボム" class="weapon">ボム</label>
+</section>
+
+<section>
+<h2>⑤ 敵の動き</h2>
+<select id="enemy">
+<option>一直線</option>
+<option>ジグザグ</option>
+<option>追尾</option>
+<option>ランダム</option>
+</select>
+</section>
+
+<section>
+<h2>⑥ 弾幕</h2>
+<select id="bullet">
+<option>単発</option>
+<option>3WAY</option>
+<option>5WAY</option>
+<option>レーザー</option>
+<option>弾幕</option>
+</select>
+</section>
+
+<section>
+<h2>⑦ パワーアップ</h2>
+<label><input type="checkbox" class="power" value="ショット強化">ショット強化</label>
+<label><input type="checkbox" class="power" value="スピードアップ">スピードアップ</label>
+<label><input type="checkbox" class="power" value="シールド">シールド</label>
+<label><input type="checkbox" class="power" value="仲間追加">仲間追加</label>
+</section>
+
+<section>
+<h2>⑧ キャラクターの生成形式</h2>
+<select id="characterFormat">
+<option value="自動選択">自動選択（ゲームに最適な形式）</option>
+<option value="SVG形式">SVG形式</option>
+<option value="画像埋め込み形式（Data URI／Base64）">画像埋め込み形式（Data URI／Base64）</option>
+<option value="Canvas描画">Canvas描画</option>
+<option value="CSS描画">CSS描画</option>
+</select>
+</section>
+
+<section>
+<h2>⑨ キャラクターのアニメーション形式</h2>
+<select id="animationFormat">
+<option value="自動選択">自動選択（ゲームに最適な形式）</option>
+<option value="スプライトシートによるコマ送りアニメーション">スプライトシート（コマ送り／パラパラ漫画方式）</option>
+<option value="SVGアニメーション">SVGアニメーション</option>
+<option value="JavaScriptによるプロシージャルアニメーション">JavaScriptによる動的アニメーション</option>
+<option value="アニメーションなし">アニメーションなし</option>
+</select>
+</section>
+
+<section>
+<h2>⑩ 画面表現</h2>
+<select id="renderingMode">
+<option value="自動選択">自動選択（ゲーム性とiOS性能を考慮）</option>
+<option value="2D">2D</option>
+<option value="2.5D（疑似3D）">2.5D（疑似3D）</option>
+<option value="3D">3D</option>
+</select>
+</section>
+
+<button onclick="makePrompt()">プロンプトを生成</button>
+
+<section>
+<h2>生成されたプロンプト</h2>
+<pre id="out"></pre>
+<button onclick="navigator.clipboard.writeText(document.getElementById('out').textContent)">コピー</button>
+</section>
+
+<script>
+function vals(cls){
+ return [...document.querySelectorAll('.'+cls+':checked')].map(x=>x.value).join("、")||"なし";
+}
+function makePrompt(){
+ const world=document.querySelector('input[name=world]:checked').value;
+ const concept=document.getElementById("concept");
+ const referenceGame=document.getElementById("referenceGame");
+ const enemy=document.getElementById("enemy");
+ const bullet=document.getElementById("bullet");
+ const characterFormat=document.getElementById("characterFormat");
+ const animationFormat=document.getElementById("animationFormat");
+ const renderingMode=document.getElementById("renderingMode");
+ const referenceText=referenceGame.value.trim()||"なし";
+ const txt=`あなたはゲーム開発のプロです。
+
+HTML＋JavaScriptのブラウザゲーム形式で動作するシューティングゲームをフルコードで作成してください。
+
+【コンセプト】
+${concept.value}
+
+【参照するゲーム】
+${referenceText}
+参照するゲームが入力されている場合は、そのゲームの雰囲気・操作感・画面構成を参考にしたアウトプットイメージで作成してください。ただし、キャラクター・名称・画像・音楽などの著作物は複製せず、オリジナル表現にしてください。
+
+【世界観】
+${world}
+
+【武器】
+${vals("weapon")}
+
+【敵の動き】
+${enemy.value}
+
+【弾幕】
+${bullet.value}
+
+【パワーアップ】
+${vals("power")}
+
+【キャラクターの生成形式】
+${characterFormat.value}
+
+【キャラクターのアニメーション形式】
+${animationFormat.value}
+
+【画面表現】
+${renderingMode.value}
+
+条件:
+・index.html単体
+・スマホ・PC対応
+・コメント付き
+・完成版フルコードを出力すること
+・「自動選択」が指定された項目は、ゲームのコンセプト、参照ゲームの雰囲気、iOSでの操作性と処理性能、3MB以内の総容量を考慮して最適な形式を選び、採用理由をコード冒頭のコメントに簡潔に記載すること
+・スプライトシートを選択した場合は、パラパラ漫画のようなコマ送りアニメーションとして実装すること
+・3Dを選択した場合も、外部ライブラリや外部アセットに依存せず、iPhoneで安定動作する軽量な実装にすること
+・iOSの携帯端末で快適に操作できるように、画面上のコントロールパネル、ダブルタップによるズーム防止、意図しないスクロール・テキスト選択・長押しメニューの防止、safe-area対応、マルチタッチ対応、WebAudioの初回タップ解除を必ず実装してください。`;
+ document.getElementById("out").textContent=txt;
+}
+</script>
+</body>
+</html>
